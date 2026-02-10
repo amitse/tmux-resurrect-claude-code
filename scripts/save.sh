@@ -21,6 +21,7 @@ save_claude_sessions() {
 
 	# Temp file for atomic write
 	local tmp_file="${save_file}.tmp.$$"
+	trap 'rm -f "$tmp_file"' EXIT INT TERM
 	: > "$tmp_file"
 
 	local count=0

@@ -14,6 +14,11 @@ set_save_hook() {
 	local existing_hook
 	existing_hook=$(get_tmux_option "@resurrect-hook-post-save-all" "")
 
+	# Don't add if already present (idempotent)
+	if [[ "$existing_hook" == *"$save_script"* ]]; then
+		return 0
+	fi
+
 	if [ -n "$existing_hook" ]; then
 		# Chain with existing hook
 		tmux set-option -g "@resurrect-hook-post-save-all" "${existing_hook} ; ${save_script}"
@@ -27,6 +32,11 @@ set_restore_hook() {
 	local restore_script="$CURRENT_DIR/scripts/restore.sh"
 	local existing_hook
 	existing_hook=$(get_tmux_option "@resurrect-hook-post-restore-all" "")
+
+	# Don't add if already present (idempotent)
+	if [[ "$existing_hook" == *"$restore_script"* ]]; then
+		return 0
+	fi
 
 	if [ -n "$existing_hook" ]; then
 		# Chain with existing hook

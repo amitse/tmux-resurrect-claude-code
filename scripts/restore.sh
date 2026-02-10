@@ -29,7 +29,7 @@ restore_claude_sessions() {
 		[ -z "$session_id" ] && continue
 
 		# Verify the session file still exists
-		if ! verify_session_exists "$session_id"; then
+		if ! verify_session_exists "$session_id" "$cwd"; then
 			continue
 		fi
 
@@ -56,7 +56,9 @@ restore_claude_sessions() {
 		fi
 
 		# Build the resume command
-		local resume_cmd="cd '${cwd}' && claude --resume '${session_id}'"
+		local escaped_cwd
+		printf -v escaped_cwd '%q' "$cwd"
+		local resume_cmd="cd ${escaped_cwd} && claude --resume '${session_id}'"
 
 		if [ "$mode" = "auto" ]; then
 			# Execute immediately

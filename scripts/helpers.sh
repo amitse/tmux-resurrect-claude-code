@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Claude Code resurrect plugin - common helpers
 
 get_tmux_option() {

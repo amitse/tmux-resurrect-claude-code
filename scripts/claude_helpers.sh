@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Claude Code resurrect plugin - Claude-specific helpers
 
 CLAUDE_DIR="$HOME/.claude"
@@ -14,37 +16,27 @@ path_to_project_slug() {
 # The pane PID is usually the shell; claude runs as a child process
 get_claude_pid_from_pane() {
 	local pane_pid="$1"
+	local max_depth=4
+	local pids_at_level=("$pane_pid")
 
-	# Check if the pane process itself is claude
-	local cmd
-	cmd=$(ps -p "$pane_pid" -o comm= 2>/dev/null)
-	if [ "$cmd" = "claude" ]; then
-		echo "$pane_pid"
-		return 0
-	fi
-
-	# Walk direct children
-	local child child_cmd
-	for child in $(ps --ppid "$pane_pid" -o pid= 2>/dev/null); do
-		child_cmd=$(ps -p "$child" -o comm= 2>/dev/null)
-		if [ "$child_cmd" = "claude" ]; then
-			echo "$child"
-			return 0
-		fi
-	done
-
-	# Walk grandchildren (shell → node → claude, or shell → wrapper → claude)
-	for child in $(ps --ppid "$pane_pid" -o pid= 2>/dev/null); do
-		local grandchild grandchild_cmd
-		for grandchild in $(ps --ppid "$child" -o pid= 2>/dev/null); do
-			grandchild_cmd=$(ps -p "$grandchild" -o comm= 2>/dev/null)
-			if [ "$grandchild_cmd" = "claude" ]; then
-				echo "$grandchild"
+	for (( depth=0; depth<=max_depth; depth++ )); do
+		for pid in "${pids_at_level[@]}"; do
+			local cmd
+			cmd=$(ps -p "$pid" -o comm= 2>/dev/null) || continue
+			if [ "$cmd" = "claude" ]; then
+				echo "$pid"
 				return 0
 			fi
 		done
+		local next_level=()
+		for pid in "${pids_at_level[@]}"; do
+			while read -r child; do
+				[ -n "$child" ] && next_level+=("$child")
+			done < <(ps --ppid "$pid" -o pid= 2>/dev/null)
+		done
+		[ ${#next_level[@]} -eq 0 ] && break
+		pids_at_level=("${next_level[@]}")
 	done
-
 	return 1
 }
 
@@ -90,9 +82,18 @@ get_recent_session_for_dir() {
 	local project_path="$CLAUDE_PROJECTS_DIR/${slug}"
 
 	if [ -d "$project_path" ]; then
-		local recent_file
-		recent_file=$(ls -t "$project_path"/*.jsonl 2>/dev/null | head -1)
-		if [ -n "$recent_file" ] && [ -f "$recent_file" ]; then
+		local recent_file=""
+		local recent_time=0
+		for f in "$project_path"/*.jsonl; do
+			[ -f "$f" ] || continue
+			local mtime
+			mtime=$(stat -c %Y "$f" 2>/dev/null) || continue
+			if [ "$mtime" -gt "$recent_time" ]; then
+				recent_time="$mtime"
+				recent_file="$f"
+			fi
+		done
+		if [ -n "$recent_file" ]; then
 			basename "$recent_file" .jsonl
 			return 0
 		fi
@@ -133,6 +134,16 @@ get_claude_session_for_pane() {
 # Verify a Claude session file exists
 verify_session_exists() {
 	local session_id="$1"
+	local cwd="${2:-}"
+
+	if [ -n "$cwd" ]; then
+		local slug
+		slug=$(path_to_project_slug "$cwd")
+		local expected_path="$CLAUDE_PROJECTS_DIR/${slug}/${session_id}.jsonl"
+		[ -f "$expected_path" ] && return 0
+	fi
+
+	# Fallback to find if cwd not provided or direct check failed
 	local found
 	found=$(find "$CLAUDE_PROJECTS_DIR" -name "${session_id}.jsonl" -type f 2>/dev/null | head -1)
 	[ -n "$found" ] && [ -f "$found" ]

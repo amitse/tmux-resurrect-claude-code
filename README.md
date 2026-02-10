@@ -21,7 +21,7 @@ Add to your `~/.tmux.conf`:
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 
 # Then add this plugin
-set -g @plugin 'your-username/tmux-resurrect-claude-code'
+set -g @plugin 'amitse/tmux-resurrect-claude-code'
 ```
 
 Reload tmux configuration:
@@ -59,7 +59,7 @@ This plugin works seamlessly with [tmux-continuum](https://github.com/tmux-plugi
 set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
-set -g @plugin 'your-username/tmux-resurrect-claude-code'
+set -g @plugin 'amitse/tmux-resurrect-claude-code'
 
 # Continuum auto-save every 15 minutes (default)
 set -g @continuum-save-interval '15'

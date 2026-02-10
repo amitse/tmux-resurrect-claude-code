@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Claude Code resurrect plugin - variable definitions
 
 # Option names
