@@ -134,16 +134,51 @@ set -g @resurrect-claude-save-file "claude_sessions.txt"
 set -g @resurrect-claude-notify "on"
 ```
 
+### Custom Claude Directory
+
+```tmux
+# Override Claude Code's data directory
+# Default: auto-detected (see XDG section below)
+set -g @resurrect-claude-dir "~/.claude"
+```
+
+## XDG Base Directory Support
+
+The plugin follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/). All paths are resolved with XDG-compliant defaults.
+
+### Claude Code directory
+
+The plugin auto-detects Claude Code's data directory in this order:
+
+1. `@resurrect-claude-dir` tmux option (if set)
+2. `$XDG_CONFIG_HOME/claude` (default: `~/.config/claude`)
+3. `~/.claude` (legacy path, often a symlink to the XDG location)
+
+### Resurrect save directory
+
+The sidecar file (`claude_sessions.txt`) is stored alongside tmux-resurrect's own save files:
+
+1. `@resurrect-dir` tmux option (if set by tmux-resurrect)
+2. `$XDG_DATA_HOME/tmux/resurrect` (default: `~/.local/share/tmux/resurrect`)
+3. `~/.tmux/resurrect` (legacy fallback)
+
+### Summary
+
+| Data | XDG Category | Path |
+|------|-------------|------|
+| Claude sessions (read) | `$XDG_CONFIG_HOME` | `~/.config/claude/projects/` |
+| Sidecar save file (write) | `$XDG_DATA_HOME` | `~/.local/share/tmux/resurrect/claude_sessions.txt` |
+
 ## How It Works
 
 ### Session Detection
 
 The plugin detects Claude Code sessions by:
 
-1. **Process Detection**: Walks the process tree to find `claude` processes (handles shell → claude and shell → node → claude cases)
+1. **Process Detection**: Walks the process tree (BFS, depth 4) to find `claude` processes
 2. **Session ID Extraction**:
    - First tries to extract from command line arguments (`--resume <uuid>`, `--session-id <uuid>`, `-r <uuid>`)
-   - Falls back to finding the most recent `.jsonl` file in `~/.claude/projects/<slug>/`
+   - Falls back to finding the most recent `.jsonl` file in `$CLAUDE_DIR/projects/<slug>/`
 3. **Path Slugification**: Converts `/mnt/d/repo` to `-mnt-d-repo` (Claude's path sanitization format)
 
 ### Hook Integration
@@ -173,12 +208,12 @@ main:1.2|/home/user/another-project|f1e2d3c4-b5a6-9780-dcba-fe0987654321
 
 1. Check the plugin is enabled: `tmux show-options -g | grep resurrect-claude`
 2. Verify `claude` is in PATH: `which claude`
-3. Check the save file exists: `ls ~/.local/share/tmux/resurrect/claude_sessions.txt`
+3. Check the save file exists: `ls ${XDG_DATA_HOME:-~/.local/share}/tmux/resurrect/claude_sessions.txt`
 
 ### Sessions not restoring
 
 1. Check auto-resume is enabled: `tmux show-option -gv @resurrect-claude-auto-resume`
-2. Verify session files still exist in `~/.claude/projects/`
+2. Verify session files still exist in `${XDG_CONFIG_HOME:-~/.config}/claude/projects/` (or `~/.claude/projects/`)
 3. Check tmux messages for errors: `tmux show-messages`
 
 ### Wrong session resumes

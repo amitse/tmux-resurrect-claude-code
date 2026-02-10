@@ -2,7 +2,36 @@
 
 # Claude Code resurrect plugin - Claude-specific helpers
 
-CLAUDE_DIR="$HOME/.claude"
+# Resolve Claude Code's data directory (XDG compliant)
+# Priority: @resurrect-claude-dir option > XDG_CONFIG_HOME > ~/.claude
+resolve_claude_dir() {
+	# 1. User override via tmux option
+	local custom_dir
+	custom_dir=$(get_tmux_option "$claude_dir_option" "")
+	if [ -n "$custom_dir" ]; then
+		custom_dir="${custom_dir/#\~/$HOME}"
+		echo "$custom_dir"
+		return
+	fi
+
+	# 2. XDG_CONFIG_HOME/claude (XDG standard)
+	local xdg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/claude"
+	if [ -d "$xdg_dir/projects" ]; then
+		echo "$xdg_dir"
+		return
+	fi
+
+	# 3. ~/.claude (legacy, may be symlink to XDG location)
+	if [ -d "$HOME/.claude/projects" ]; then
+		echo "$HOME/.claude"
+		return
+	fi
+
+	# 4. Default to XDG path even if it doesn't exist yet
+	echo "$xdg_dir"
+}
+
+CLAUDE_DIR="$(resolve_claude_dir)"
 CLAUDE_PROJECTS_DIR="$CLAUDE_DIR/projects"
 
 # Convert a working directory path to Claude's project directory name

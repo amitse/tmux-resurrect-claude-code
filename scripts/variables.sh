@@ -8,6 +8,7 @@ claude_auto_resume_option="@resurrect-claude-auto-resume"
 claude_restore_mode_option="@resurrect-claude-restore-mode"
 claude_save_file_option="@resurrect-claude-save-file"
 claude_notify_option="@resurrect-claude-notify"
+claude_dir_option="@resurrect-claude-dir"
 
 # Defaults
 default_claude_enabled="on"
