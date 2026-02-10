@@ -19,7 +19,10 @@ default_claude_restore_mode="prompt"
 default_claude_save_file="claude_sessions.txt"
 default_claude_notify="on"
 
-# Resurrect integration
+# State directory (XDG_STATE_HOME compliant)
+default_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/tmux/resurrect-claude-code"
+
+# Resurrect integration (only used to locate resurrect's own dir for fallback)
 resurrect_dir_option="@resurrect-dir"
 default_resurrect_dir="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
 # Fallback for older setups

@@ -33,13 +33,18 @@ get_resurrect_dir() {
 	echo "$dir"
 }
 
+# Get the state directory for this plugin's data (XDG_STATE_HOME compliant)
+get_state_dir() {
+	echo "$default_state_dir"
+}
+
 # Get the sidecar file path for Claude session data
 get_claude_save_file() {
-	local resurrect_dir
-	resurrect_dir=$(get_resurrect_dir)
+	local state_dir
+	state_dir=$(get_state_dir)
 	local filename
 	filename=$(get_tmux_option "$claude_save_file_option" "$default_claude_save_file")
-	echo "${resurrect_dir}/${filename}"
+	echo "${state_dir}/${filename}"
 }
 
 display_message() {
